@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import json
 
 io = CsvIo()
 
@@ -72,19 +73,37 @@ def plots(data: pd.DataFrame):
 
 def PrincipleComponents():
     data = io.readData("st_FullSentimentFactor").set_index('SgnYear')
-    data = data[['FUNDDISCOUNTPREMIUM', 'lagged_TurnoverRate', 'IPONUMBER',
-                 'lagged_IPORETURN', 'SRate', 'lagged_LogPDND']]
     raw_mat = data.iloc[:, :].to_numpy()
-    pca = PCA(n_components=1)
+    pca = PCA(n_components=5)
     pca.fit(raw_mat)
-    print(pca.components_)
-    return pd.DataFrame(getSeries(coefficient=pca.components_)).reset_index()
+    summary = {
+        '12个变量':data.columns.tolist(),
+        '12变量取前5个主成分平均': np.mean(pca.components_, axis=0).tolist(),
+        '前5个主成分方差解释比例': np.sum(pca.explained_variance_ratio_)}
+    targetSeries = getSeries(coefficient=pca.components_)
+    chooseList = []
+    corrcoef = {}
+    for idx, col in enumerate(data.columns.tolist()[:6]):
+        corrcoef[col] = np.corrcoef(data[col], targetSeries)[0][1]
+        corrcoef['lagged_' + col] = np.corrcoef(data['lagged_' + col], targetSeries)[0][1]
+        if np.abs(corrcoef[col]) > np.abs(corrcoef['lagged_' + col]):
+            chooseList.append(idx)
+        else:
+            chooseList.append(idx + 6)
+    summary['12个变量与主成分的相关系数'] = corrcoef
+    summary['相关系数过滤剩下的6个变量'] = np.array(data.columns.tolist())[chooseList].tolist()
+    summary['相关系数过滤掉6个变量系数'] = pca.components_[0][chooseList].tolist()
+    result = getSeries(pca.components_[0][chooseList].reshape(1, -1), np.array(data.columns.tolist())[chooseList])
+    summary['与12变量相关系数'] = np.corrcoef(result, targetSeries)[0][1]
+    with open("sentimentSummary.json", 'w') as fp:
+        json.dump(summary, fp, ensure_ascii=False, indent=4)
+    return pd.DataFrame(result).reset_index()
 
 
 def getSeries(coefficient, subset=None):
     data = io.readData("st_FullSentimentFactor").set_index('SgnYear')
-    data = data[['FUNDDISCOUNTPREMIUM', 'lagged_TurnoverRate', 'IPONUMBER',
-                 'lagged_IPORETURN', 'SRate', 'lagged_LogPDND']]
+    # data = data[['FUNDDISCOUNTPREMIUM', 'lagged_TurnoverRate', 'IPONUMBER',
+    #              'lagged_IPORETURN', 'SRate', 'lagged_LogPDND']]
     if subset is None:
         subset = data.columns.tolist()
     data = data[subset]
