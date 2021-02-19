@@ -91,6 +91,10 @@ def preprocess():
     factors = pd.concat([ME, Age, EBE, DBE, PPEA, BEME, GS], axis=1)
     factors = factors.dropna()
     factors = factors.clip(lower=factors.quantile(0.005), upper=factors.quantile(0.995), axis=1)
+    io.saveData("fe_describeFactors", factors.describe().reset_index())
+    factors = factors.reset_index()
+    factors["tMinus1"] = factors['SgnYear'] - 1
+    io.saveData("fe_factors", factors)
     return factors
 
 
