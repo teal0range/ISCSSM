@@ -4,6 +4,8 @@ from Io import *
 from settings import *
 import numpy as np
 from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 io = CsvIo()
 
@@ -48,8 +50,24 @@ def laggedVars():
     pre = preprocess()
     data = pd.concat([pre, pre.shift(1).rename(columns={x: "lagged_" + x for x in pre.columns.tolist()})],
                      axis=1).dropna()
+    io.saveData("st_description", data.describe().reset_index())
+    plots(pre)
     data.iloc[:, :] = (data.copy() - data.mean()) / data.copy().std()
     return data
+
+
+def plots(data: pd.DataFrame):
+    x = data.index.tolist()
+    for column in data.columns.tolist():
+        y = data[column].values.tolist()
+        tick_spacing = 5
+        plt.figure(figsize=(6, 4))
+        fig, ax = plt.subplots(1, 1)
+        ax.plot(x, y)
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        plt.plot(x, y, marker='v', color='grey', label=column)
+        plt.legend()
+        plt.savefig("pictures/{}.png".format(column))
 
 
 def PrincipleComponents():
