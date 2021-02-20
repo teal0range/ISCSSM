@@ -11,4 +11,5 @@
 
 ## 参考文献
 [1]Baker M , Wurgler J . Investor Sentiment and the Cross-Section of Stock Returns[J]. NBER Working Papers, 2004.
+
 [2]易志高,茅宁.中国股市投资者情绪测量研究:CICSI的构建[J].金融研究,2009(11):174-184.
