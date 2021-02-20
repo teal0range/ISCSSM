@@ -31,8 +31,8 @@ class sentimentGroup:
         data = self._factors.sort_values(by=["SgnYear", 'positiveSentiment', self.col]). \
             groupby(["SgnYear", 'positiveSentiment']). \
             progress_apply(
-            lambda x: pd.Series([self.getVMReturn(x.iloc[int(len(x) / 10 * i):int(len(x) / 10 * (i + 1))])
-                                 for i in range(10)])).reset_index()
+            lambda x: pd.Series([self.getVMReturn(x.iloc[int(len(x) / Tiles * i):int(len(x) / Tiles * (i + 1))])
+                                 for i in range(Tiles)])).reset_index()
         data = data.drop('SgnYear', axis=1).groupby("positiveSentiment").apply(lambda x: x.mean())
         data = data.rename(columns={x: - x - 1 for x in data.columns.tolist() if not isinstance(x, str)})
         data = data.rename(columns={x: - x for x in data.columns.tolist() if not isinstance(x, str)})
