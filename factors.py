@@ -133,16 +133,26 @@ def parseDateStr(date: Union[datetime.datetime, str]) -> str:
     return date
 
 
+@np.vectorize
+def getSgnYear(s):
+    if s[5:7] > '06':
+        return int(s[:4])
+    else:
+        return int(s[:4]) - 1
+
+
 def stockReturns():
     sr = io.readData("raw_StockPrice").rename(columns={"fullCode": "Stkcd"})
     sr['Stkcd'] = sr['Stkcd'].str[:6].astype(int)
-    sr = sr[(sr['tradeDate'].str[5:7] == '06') & judgeMarket(sr)]
+    sr = sr[judgeMarket(sr)]
     sr = sr.groupby("Stkcd").apply(
         lambda x: pd.concat([x.sort_values(by=['tradeDate'])['tradeDate'],
                              x.sort_values(by=['tradeDate'])['Close'].rolling(2).
                             apply(lambda y: np.log(y.iloc[1] / y.iloc[0]))], axis=1)). \
         dropna().reset_index(level=1, drop=True).reset_index()
-    sr['SgnYear'] = sr['tradeDate'].str[:4].astype(int) - 1
+    sr['SgnYear'] = getSgnYear(sr['tradeDate'])
+    io.saveData("fe_monthlyReturn", sr)
+    sr = sr[sr['tradeDate'].str[5:7] == '06']
     sr['Close'] = sr['Close'].clip(lower=sr['Close'].quantile(0.005), upper=sr['Close'].quantile(0.995))
     return sr[['Stkcd', 'SgnYear', 'Close']].set_index(['Stkcd', 'SgnYear']).rename(columns={"Close": "Return"})
 
