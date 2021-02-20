@@ -2,6 +2,8 @@ from collections import defaultdict
 
 from Io import CsvIo
 import regex as re
+import os
+import pandas as pd
 
 io = CsvIo()
 
@@ -26,5 +28,14 @@ def merge():
         io.saveData(key, base)
 
 
+def convert():
+    for root, dirs, files in os.walk("Data/data"):
+        for file in files:
+            if file.endswith(".xlsx"):
+                pd.read_excel("Data/data/{}".format(file), skiprows=[1, 2]). \
+                    to_csv("Data/data/{}".format(file[:-4] + "csv"), index=False)
+
+
 if __name__ == '__main__':
-    pass
+    convert()
+    # merge()
