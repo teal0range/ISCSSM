@@ -57,7 +57,7 @@ def preprocess():
     EBE['E+/BE'] = EBE['E+/BE'].clip(lower=EBE['E+/BE'].quantile(0.005), upper=EBE['E+/BE'].quantile(0.995))
     EBE = EBE.set_index(['Stkcd', 'SgnYear'])
 
-    DBE = io.readData("FI_TE")
+    DBE = io.readData("FI_TE").fillna(0)
     DBE = DBE[(DBE['Typrep'] == 'A') &
               (DBE['Accper'].str[5:7] == '12') &
               judgeMarket(DBE)]
@@ -81,7 +81,7 @@ def preprocess():
     BEME['BE/ME'] = BEME['Equity'] / BEME['MarketValue']
     BEME = BEME[['Stkcd', 'SgnYear', 'BE/ME']].set_index(['Stkcd', 'SgnYear'])
 
-    GS = io.readData("EI").dropna()
+    GS = io.readData("EI").fillna(0)
     GS = GS[(GS['Accper'].str[5:7] == '12') &
             (GS['Typrep'] == 'A') &
             judgeMarket(GS)]
@@ -90,7 +90,8 @@ def preprocess():
 
     factors = pd.concat([stockReturns(), ME, Age, EBE, DBE, PPEA, BEME, GS], axis=1)
     factors = factors.dropna()
-    factors = factors.clip(lower=factors.quantile(0.005), upper=factors.quantile(0.995), axis=1)
+    col = [c for c in factors.columns.tolist() if "dummy not in c"]
+    factors[col] = factors[col].clip(lower=factors[col].quantile(0.005), upper=factors[col].quantile(0.995), axis=1)
     io.saveData("fe_describeFactors", factors.describe().reset_index())
     factors = factors.reset_index()
     factors["tMinus1"] = factors['SgnYear'] - 1
